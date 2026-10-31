@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Jogo do Impostor</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#151A3F">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Impostor">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#E6E9FF; --paper:#FFFDF6; --ink:#151A3F; --muted:#5A6088;
+  --accent:#FFC83A; --civil:#1C9A61; --imp:#E1323C; --line:#151A3F;
+  --shadow:4px 4px 0 var(--line);
+  color-scheme: light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#11163A; --paper:#1F275C; --ink:#F1F2FF; --muted:#A9AEDA;
+    --civil:#34C383; --imp:#FF5A62; --line:#05081F; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#11163A; --paper:#1F275C; --ink:#F1F2FF; --muted:#A9AEDA;
+  --civil:#34C383; --imp:#FF5A62; --line:#05081F; color-scheme: dark;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0; background:var(--bg); color:var(--ink);
+  font-family:"Bricolage Grotesque", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size:17px; line-height:1.45; -webkit-font-smoothing:antialiased}
+main{max-width:520px; margin:0 auto; padding:20px 18px 40px}
+h1{font-size:2.6rem; line-height:1; font-weight:800; margin:8px 0 6px; letter-spacing:-0.02em}
+h2{font-size:1.25rem; font-weight:800; margin:0 0 10px}
+p{margin:0 0 10px}
+.sub{color:var(--muted); margin-bottom:22px}
+.block{background:var(--paper); border:2.5px solid var(--line); border-radius:18px;
+  box-shadow:var(--shadow); padding:18px; margin-bottom:22px}
+.hint{color:var(--muted); font-size:.92rem}
+.players{display:flex; flex-direction:column; gap:8px; margin-bottom:12px}
+.prow{display:flex; gap:8px; align-items:center}
+.prow span{width:1.6em; text-align:right; color:var(--muted); font-weight:600}
+input[type=text]{flex:1; min-width:0; font:inherit; color:var(--ink); background:var(--bg);
+  border:2px solid var(--line); border-radius:10px; padding:10px 12px}
+input[type=text]:focus{outline:3px solid var(--accent); outline-offset:1px}
+.x{width:42px; height:42px; flex:none; border-radius:10px; border:2px solid var(--line);
+  background:transparent; color:var(--ink); font:inherit; font-size:1.3rem; cursor:pointer}
+.x:disabled{opacity:.3}
+textarea{width:100%; font:inherit; color:var(--ink); background:var(--bg); border:2px solid var(--line); border-radius:10px; padding:10px 12px; resize:vertical}
+textarea:focus{outline:3px solid var(--accent); outline-offset:1px}
+.trow{display:flex; gap:8px; align-items:center}
+.trow .chip{flex:1; text-align:left; border-radius:12px; padding:10px 14px}
+.btn{display:inline-flex; align-items:center; justify-content:center; gap:8px;
+  font:inherit; font-weight:800; font-size:1.1rem; color:#151A3F;
+  background:var(--accent); border:2.5px solid var(--line); border-radius:14px;
+  box-shadow:var(--shadow); padding:14px 20px; cursor:pointer; width:100%;
+  transition:transform .08s, box-shadow .08s}
+.btn:active{transform:translate(3px,3px); box-shadow:1px 1px 0 var(--line)}
+.btn.ghost{background:var(--paper); color:var(--ink)}
+.btn.danger{background:var(--imp); color:#fff}
+.btn.small{font-size:.95rem; padding:9px 14px; width:auto; box-shadow:3px 3px 0 var(--line)}
+.btn:disabled{opacity:.45; cursor:not-allowed}
+button:focus-visible{outline:3px solid var(--accent); outline-offset:3px}
+.row2{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+.stepper{display:flex; align-items:center; gap:14px}
+.stepper button{width:48px; height:48px; border-radius:50%; border:2.5px solid var(--line);
+  background:var(--bg); color:var(--ink); font:inherit; font-size:1.6rem; font-weight:800; cursor:pointer}
+.stepper button:disabled{opacity:.35}
+.stepper output{font-size:2.4rem; font-weight:800; min-width:1.4em; text-align:center}
+.chips{display:flex; flex-wrap:wrap; gap:8px}
+.chip{font:inherit; font-weight:600; border:2px solid var(--line); border-radius:999px;
+  padding:8px 14px; background:var(--bg); color:var(--ink); cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--ink); color:var(--bg)}
+.seg{display:grid; grid-template-columns:repeat(var(--cols,2),1fr); gap:8px}
+.seg .chip{border-radius:12px; text-align:center; padding:10px 6px}
+.err{color:var(--imp); font-weight:600; min-height:1.4em; margin:6px 0 10px}
+
+.stage{min-height:calc(100vh - 80px); display:flex; flex-direction:column; justify-content:center; gap:22px}
+.progress{color:var(--muted); font-weight:600; text-align:center}
+.pass{text-align:center}
+.pass .name{font-size:clamp(2.4rem,11vw,3.6rem); font-weight:800; line-height:1.05; word-break:break-word; margin:6px 0 4px}
+.card{perspective:1200px; width:100%; aspect-ratio:3/4; max-height:60vh; margin:0 auto; max-width:calc(60vh * .75)}
+.card-inner{position:relative; width:100%; height:100%; transform-style:preserve-3d;
+  transition:transform .55s cubic-bezier(.3,1.4,.5,1)}
+.card.flipped .card-inner{transform:rotateY(180deg)}
+.face{position:absolute; inset:0; backface-visibility:hidden; -webkit-backface-visibility:hidden;
+  border:3px solid var(--line); border-radius:22px; box-shadow:6px 6px 0 var(--line);
+  display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px; text-align:center}
+.front{background:var(--accent); color:#151A3F; cursor:pointer;
+  background-image:repeating-linear-gradient(45deg, transparent 0 14px, rgba(21,26,63,.08) 14px 28px)}
+.front .q{font-size:6rem; font-weight:800; line-height:1}
+.front .tap{font-weight:800; font-size:1.15rem; margin-top:10px}
+.back{transform:rotateY(180deg); color:#fff}
+.back.civil{background:var(--civil)} .back.imp{background:var(--imp)}
+.role{font-size:2.6rem; font-weight:800; line-height:1; margin-bottom:18px}
+.wordlabel{font-size:.95rem; opacity:.85}
+.word{font-size:clamp(1.7rem,8vw,2.4rem); font-weight:800; line-height:1.1; margin-top:4px; word-break:break-word}
+.cat{margin-top:18px; font-size:.95rem; opacity:.85}
+
+/* game header */
+.status{display:flex; justify-content:space-between; align-items:center; gap:10px;
+  background:var(--paper); border:2.5px solid var(--line); border-radius:14px; padding:10px 14px; margin-bottom:20px; font-weight:600}
+.hearts{font-size:1.25rem; letter-spacing:2px}
+.hearts .lost{opacity:.25; filter:grayscale(1)}
+
+/* timer */
+.timer{position:relative; width:min(62vw,240px); aspect-ratio:1; margin:0 auto}
+.timer svg{width:100%; height:100%; transform:rotate(-90deg)}
+.timer .trk{stroke:color-mix(in srgb, var(--ink) 15%, transparent)}
+.timer .bar{stroke:var(--accent); transition:stroke-dashoffset 1s linear, stroke .3s}
+.timer.low .bar{stroke:var(--imp)}
+.timer .num{position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+  font-size:4.2rem; font-weight:800; font-variant-numeric:tabular-nums}
+.timer.done .num{color:var(--imp); font-size:2rem}
+.speaker{text-align:center}
+.speaker .name{font-size:clamp(2.2rem,10vw,3.2rem); font-weight:800; line-height:1.05; word-break:break-word}
+
+.pick{display:flex; flex-direction:column; gap:8px}
+.pick button{font:inherit; font-weight:600; font-size:1.1rem; text-align:left; color:var(--ink);
+  background:var(--bg); border:2.5px solid var(--line); border-radius:12px; padding:12px 14px; cursor:pointer}
+.pick button[aria-pressed="true"]{background:var(--ink); color:var(--bg)}
+
+.list{list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:6px}
+.list li{display:flex; justify-content:space-between; align-items:center; gap:10px; padding:8px 0;
+  border-bottom:2px dashed color-mix(in srgb, var(--ink) 20%, transparent)}
+.list li:last-child{border-bottom:0}
+.list .out{text-decoration:line-through; opacity:.6}
+.tag{font-weight:800; font-size:.9rem; padding:2px 10px; border-radius:999px; color:#fff; white-space:nowrap}
+.tag.imp{background:var(--imp)} .tag.civil{background:var(--civil)}
+.big{font-size:2rem; font-weight:800; line-height:1.1; word-break:break-word}
+.verdict{text-align:center; padding:28px 18px}
+.verdict.imp{background:var(--imp); color:#fff}
+.verdict.civil{background:var(--civil); color:#fff}
+.verdict .big{font-size:2.4rem}
+.stack{display:flex; flex-direction:column; gap:14px}
+.hidden{display:none !important}
+@media (prefers-reduced-motion: reduce){ .card-inner,.btn,.timer .bar{transition:none} }
+</style>
+</head>
+<body>
+<main>
+
+<!-- SETUP -->
+<section id="setup">
+  <h1>Jogo do Impostor</h1>
+  <p class="sub">Escrevam os nomes, escolham as regras e passem o telemóvel de mão em mão.</p>
+
+  <div class="block">
+    <h2>Jogadores</h2>
+    <div class="players" id="players"></div>
+    <button class="btn ghost small" id="addPlayer">+ Adicionar jogador</button>
+  </div>
+
+  <div class="block">
+    <h2>Impostores</h2>
+    <div class="stepper">
+      <button id="impMinus" aria-label="Menos impostores">−</button>
+      <output id="impCount">1</output>
+      <button id="impPlus" aria-label="Mais impostores">+</button>
+    </div>
+    <p class="hint" id="impHint" style="margin-top:10px"></p>
+  </div>
+
+  <div class="block">
+    <h2>Vidas dos civis</h2>
+    <div class="stepper">
+      <button id="livesMinus" aria-label="Menos vidas">−</button>
+      <output id="livesCount">2</output>
+      <button id="livesPlus" aria-label="Mais vidas">+</button>
+    </div>
+    <p class="hint" style="margin-top:10px">Cada vez que votam num civil, perdem uma vida e essa pessoa fica eliminada.</p>
+  </div>
+
+  <div class="block">
+    <h2>Tempo para dizer a palavra</h2>
+    <div class="seg" id="time" style="--cols:4">
+      <button class="chip" data-t="15">15 s</button>
+      <button class="chip" data-t="30">30 s</button>
+      <button class="chip" data-t="45">45 s</button>
+      <button class="chip" data-t="60">60 s</button>
+    </div>
+    <p class="hint" style="margin-top:10px">Tempo que cada jogador tem na sua vez.</p>
+  </div>
+
+  <div class="block">
+    <h2>Categorias</h2>
+    <p class="hint">Escolham uma ou mais. A palavra sai de uma delas ao calhas.</p>
+    <div class="chips" style="margin-bottom:12px">
+      <button class="btn ghost small" id="catsAll">Escolher todas</button>
+      <button class="btn ghost small" id="catsNone">Limpar</button>
+    </div>
+    <div class="chips" id="cats"></div>
+  </div>
+
+  <div class="block">
+    <h2>Os vossos temas</h2>
+    <p class="hint">Criem um tema com palavras vossas: amigos, piadas internas, o que quiserem.</p>
+    <div id="customList" class="stack" style="gap:8px; margin-bottom:12px"></div>
+    <button class="btn ghost small" id="newTheme">+ Criar tema</button>
+    <div id="editor" class="hidden stack" style="margin-top:14px">
+      <input type="text" id="themeName" placeholder="Nome do tema" maxlength="30" autocomplete="off">
+      <textarea id="themeWords" rows="8" placeholder="Uma palavra por linha.&#10;Para dar uma pista ao impostor, escreve:&#10;palavra - pista"></textarea>
+      <p class="hint" style="margin:0">Exemplo: João - Barba. Sem pista, o impostor só vê “Disfarça!”.</p>
+      <p class="err" id="themeErr"></p>
+      <button class="btn" id="saveTheme">Guardar tema</button>
+      <div class="row2"><button class="btn ghost" id="cancelTheme">Cancelar</button><button class="btn danger" id="deleteTheme">Apagar</button></div>
+    </div>
+  </div>
+
+  <div class="block">
+    <h2>O impostor recebe…</h2>
+    <div class="seg" id="mode">
+      <button class="chip" data-mode="hint">Uma pista</button>
+      <button class="chip" data-mode="none">Nada</button>
+    </div>
+    <p class="hint" id="modeHint" style="margin-top:10px"></p>
+  </div>
+
+  <p class="err" id="err" role="alert"></p>
+  <button class="btn" id="start">Começar jogo</button>
+</section>
+
+<!-- PASS / REVEAL -->
+<section id="reveal" class="hidden">
+  <div class="stage">
+    <p class="progress" id="progress"></p>
+    <div id="passView" class="pass stack">
+      <p>Passa o telemóvel a</p>
+      <div class="name" id="passName"></div>
+      <p class="hint">Só esta pessoa deve olhar para o ecrã.</p>
+      <button class="btn" id="iAm"></button>
+    </div>
+    <div id="cardView" class="hidden stack">
+      <div class="card" id="card">
+        <div class="card-inner">
+          <div class="face front" id="cardFront" role="button" tabindex="0" aria-label="Virar carta">
+            <div class="q">?</div>
+            <div class="tap">Toca para ver o teu papel</div>
+          </div>
+          <div class="face back" id="cardBack">
+            <div class="role" id="roleTitle"></div>
+            <div class="wordlabel" id="wordLabel"></div>
+            <div class="word" id="wordText"></div>
+            <div class="cat" id="catText"></div>
+          </div>
+        </div>
+      </div>
+      <button class="btn" id="hideNext" disabled>Esconder e passar</button>
+    </div>
+  </div>
+</section>
+
+<!-- GAME -->
+<section id="game" class="hidden">
+  <div class="status" id="status">
+    <span id="roundLabel"></span>
+    <span class="hearts" id="hearts" aria-label=""></span>
+  </div>
+
+  <!-- words turn -->
+  <div id="vWords" class="stack">
+    <p class="progress" id="turnProgress"></p>
+    <div class="speaker">
+      <p class="hint" style="margin-bottom:2px">É a vez de</p>
+      <div class="name" id="speaker"></div>
+    </div>
+    <div class="timer" id="timer">
+      <svg viewBox="0 0 100 100" aria-hidden="true">
+        <circle class="trk" cx="50" cy="50" r="44" fill="none" stroke-width="9"/>
+        <circle class="bar" id="timerBar" cx="50" cy="50" r="44" fill="none" stroke-width="9" stroke-linecap="round"/>
+      </svg>
+      <div class="num" id="timerNum" aria-live="polite"></div>
+    </div>
+    <button class="btn" id="turnBtn">Começar tempo</button>
+    <button class="btn ghost" id="skipTurn">Passar ao próximo</button>
+  </div>
+
+  <!-- vote -->
+  <div id="vVote" class="hidden">
+    <h1 style="font-size:2rem">Hora de votar</h1>
+    <p class="sub">Discutam e votem em voz alta. Depois escolham aqui quem foi o mais votado.</p>
+    <div class="pick" id="votePick"></div>
+    <p class="err" id="voteErr"></p>
+    <div class="stack">
+      <button class="btn danger" id="voteBtn" disabled>Eliminar</button>
+      <button class="btn ghost" id="tieBtn">Empate, ninguém sai</button>
+    </div>
+  </div>
+
+  <!-- verdict -->
+  <div id="vVerdict" class="hidden stack">
+    <div class="block verdict" id="verdictBox">
+      <div class="big" id="verdictName"></div>
+      <p id="verdictText" style="margin:8px 0 0; font-size:1.2rem; font-weight:600"></p>
+    </div>
+    <p class="hint" id="verdictInfo" style="text-align:center"></p>
+    <button class="btn" id="nextRound">Próxima ronda de palavras</button>
+  </div>
+
+</section>
+
+<!-- END -->
+<section id="end" class="hidden">
+  <div class="block verdict" id="endBox">
+    <div class="big" id="endTitle"></div>
+    <p id="endText" style="margin:8px 0 0; font-size:1.1rem; font-weight:600"></p>
+  </div>
+  <div class="block">
+    <p class="hint" style="margin-bottom:4px">A palavra era</p>
+    <div class="big" id="endWord"></div>
+    <ul class="list" id="endList" style="margin-top:14px"></ul>
+  </div>
+  <div class="stack">
+    <button class="btn" id="playAgain">Jogar outra vez</button>
+    <button class="btn ghost" id="backSetup">Mudar jogadores ou regras</button>
+  </div>
+</section>
+
+</main>
+<script>
+const CATEGORIES = {
+  "Pessoas famosas": [
+    ["Cristiano Ronaldo","Ilha"],["Amália Rodrigues","Xaile"],["José Mourinho","Banco"],
+    ["Taylor Swift","Pulseiras"],["Michael Jackson","Luva"],["Albert Einstein","Cabelo"],
+    ["Lionel Messi","Canhoto"],["Beyoncé","Abelha"],["Shakira","Ancas"],
+    ["Elon Musk","Foguetão"],["Fernando Pessoa","Chapéu"],["Rosalía","Unhas"],
+    ["Papa Francisco","Varanda"],["Mr. Bean","Ursinho"],["Harry Styles","Pérolas"],
+    ["Marcelo Rebelo de Sousa","Selfie"],["Bad Bunny","Óculos"],["Rihanna","Guarda-chuva"]
+  ],
+  "Animais": [
+    ["Girafa","Alta"],["Pinguim","Fraque"],["Polvo","Tinta"],["Camaleão","Disfarce"],
+    ["Elefante","Memória"],["Coruja","Noite"],["Canguru","Bolso"],["Tubarão","Barbatana"],
+    ["Preguiça","Lento"],["Flamingo","Uma perna"],["Abelha","Rainha"],["Golfinho","Sorriso"],
+    ["Zebra","Riscas"],["Morcego","Caverna"],["Caracol","Casa"],["Pavão","Leque"]
+  ],
+  "Comida": [
+    ["Pastel de nata","Canela"],["Francesinha","Molho"],["Sushi","Pauzinhos"],["Pizza","Fatia"],
+    ["Bacalhau","Mil maneiras"],["Pipocas","Cinema"],["Gelado","Derrete"],["Sopa","Colher"],
+    ["Bifana","Pão"],["Chocolate","Páscoa"],["Caracóis","Verão"],["Hambúrguer","Camadas"],
+    ["Bolo de aniversário","Velas"],["Arroz de pato","Forno"],["Panquecas","Pilha"],["Ovo estrelado","Gema"]
+  ],
+  "Lugares": [
+    ["Praia","Areia"],["Hospital","Espera"],["Aeroporto","Malas"],["Escola","Recreio"],
+    ["Supermercado","Carrinho"],["Ginásio","Suor"],["Cinema","Escuro"],["Biblioteca","Silêncio"],
+    ["Discoteca","Luzes"],["Igreja","Sino"],["Estádio","Bancada"],["Zoo","Jaulas"],
+    ["Prisão","Grades"],["Farmácia","Receita"],["Parque de campismo","Tenda"],["Casa de banho","Espelho"]
+  ],
+  "Profissões": [
+    ["Bombeiro","Sirene"],["Dentista","Cadeira"],["Cabeleireiro","Tesoura"],["Polícia","Apito"],
+    ["Professor","Quadro"],["Piloto","Nuvens"],["Cozinheiro","Avental"],["Carteiro","Envelopes"],
+    ["Astronauta","Gravidade"],["Médico","Bata"],["Palhaço","Nariz"],["Juiz","Martelo"],
+    ["Fotógrafo","Flash"],["Jardineiro","Regador"],["Mágico","Cartola"],["Canalizador","Cano"]
+  ],
+  "Objetos": [
+    ["Guarda-chuva","Molhado"],["Escova de dentes","Manhã"],["Espelho","Reflexo"],["Relógio","Tempo"],
+    ["Chave","Porta"],["Almofada","Sono"],["Tesoura","Corte"],["Vela","Chama"],
+    ["Óculos de sol","Verão"],["Mochila","Costas"],["Comando da TV","Sofá"],["Carregador","Bateria"],
+    ["Frigorífico","Frio"],["Secador","Ar quente"],["Isqueiro","Bolso"],["Bola","Redonda"]
+  ],
+  "Desporto": [
+    ["Futebol","Golo"],["Ténis","Raquete"],["Natação","Touca"],["Surf","Onda"],
+    ["Basquetebol","Cesto"],["Boxe","Luvas"],["Ciclismo","Pedal"],["Ski","Neve"],
+    ["Golfe","Buraco"],["Ginástica","Equilíbrio"],["Voleibol","Rede"],["Xadrez","Rei"],
+    ["Padel","Paredes"],["Corrida","Meta"],["Andebol","Remate"],["Judo","Cinto"]
+  ],
+  "Filmes e séries": [
+    ["Titanic","Icebergue"],["Harry Potter","Varinha"],["Shrek","Pântano"],["Frozen","Gelo"],
+    ["Rei Leão","Savana"],["Casa de Papel","Máscara"],["Stranger Things","Anos 80"],["Toy Story","Brinquedos"],
+    ["Squid Game","Jogos"],["Star Wars","Espada"],["Os Simpsons","Amarelo"],["Friends","Café"],
+    ["Avatar","Azul"],["Mamma Mia","ABBA"],["Jurassic Park","Ovos"],["Wednesday","Mão"]
+  ],
+  "Países": [
+    ["Brasil","Samba"],["Japão","Sol nascente"],["Itália","Bota"],["Egito","Areia"],
+    ["França","Torre"],["Austrália","Longe"],["Espanha","Vizinho"],["China","Muralha"],
+    ["México","Sombrero"],["Estados Unidos","Estrelas"],["Inglaterra","Chá"],["Suíça","Relógios"],
+    ["Grécia","Colunas"],["Canadá","Folha"],["Índia","Especiarias"],["Holanda","Bicicletas"],
+    ["Islândia","Vulcão"],["Cabo Verde","Morna"]
+  ],
+  "Portugal": [
+    ["Galo de Barcelos","Colorido"],["Fado","Saudade"],["Azulejo","Parede"],["Elétrico 28","Amarelo"],
+    ["Santos Populares","Manjerico"],["Torre de Belém","Rio"],["Sardinha","Brasa"],["Vinho do Porto","Caves"],
+    ["Algarve","Férias"],["Serra da Estrela","Queijo"],["Pastel de Belém","Fila"],["Nazaré","Ondas"],
+    ["Ginjinha","Copinho"],["Fátima","Velas"],["Sintra","Palácio"],["Ponte 25 de Abril","Vermelha"],
+    ["Caldo verde","Couve"],["Guitarra portuguesa","Cordas"]
+  ],
+  "Marcas": [
+    ["Nike","Visto"],["Apple","Fruta"],["McDonald’s","Palhaço"],["Coca-Cola","Bolhas"],
+    ["IKEA","Montar"],["Lego","Peças"],["Netflix","Sofá"],["Ferrari","Cavalo"],
+    ["Adidas","Três"],["Google","Pesquisa"],["Nutella","Avelã"],["Zara","Provador"],
+    ["Disney","Castelo"],["Spotify","Verde"],["Red Bull","Asas"],["PlayStation","Comando"],
+    ["Starbucks","Sereia"],["Tesla","Tomada"]
+  ],
+  "Música e cantores": [
+    ["Ed Sheeran","Ruivo"],["Billie Eilish","Sussurro"],["Queen","Coroa"],["The Beatles","Liverpool"],
+    ["David Carreira","Família"],["Mariza","Fado"],["Bruno Mars","Planeta"],["Dua Lipa","Pista"],
+    ["Madonna","Rainha"],["Eminem","Rimas"],["Elvis Presley","Topete"],["Lady Gaga","Vestido"],
+    ["Ana Moura","Voz"],["Coldplay","Pulseiras"],["Justin Bieber","Canadá"],["Xutos & Pontapés","Rock"],
+    ["ABBA","Suécia"],["Daft Punk","Capacetes"]
+  ],
+  "Desenhos animados": [
+    ["Bob Esponja","Mar"],["Pikachu","Choque"],["Mickey","Orelhas"],["Scooby-Doo","Mistério"],
+    ["Pato Donald","Marinheiro"],["Peppa Pig","Poças"],["Tom e Jerry","Perseguição"],["Nemo","Barbatana"],
+    ["Pantera Cor-de-Rosa","Silencioso"],["Pernalonga","Cenoura"],["Smurfs","Cogumelo"],["Homer Simpson","Donut"],
+    ["Doraemon","Bolso"],["Pocoyo","Azul"],["Faisca McQueen","Pista"],["Minions","Banana"],
+    ["Ruca","Careca"],["Garfield","Lasanha"]
+  ],
+  "Super-heróis e vilões": [
+    ["Homem-Aranha","Teia"],["Batman","Noite"],["Super-Homem","Capa"],["Hulk","Raiva"],
+    ["Mulher-Maravilha","Laço"],["Thor","Martelo"],["Joker","Sorriso"],["Homem de Ferro","Armadura"],
+    ["Capitão América","Escudo"],["Darth Vader","Respiração"],["Thanos","Luva"],["Wolverine","Garras"],
+    ["Pantera Negra","Reino"],["Deadpool","Vermelho"],["Flash","Rápido"],["Aquaman","Tridente"],
+    ["Catwoman","Chicote"],["Loki","Truques"]
+  ],
+  "Instrumentos musicais": [
+    ["Piano","Teclas"],["Guitarra","Palheta"],["Bateria","Baquetas"],["Violino","Arco"],
+    ["Flauta","Sopro"],["Saxofone","Jazz"],["Harpa","Anjo"],["Trompete","Fanfarra"],
+    ["Acordeão","Fole"],["Gaita de foles","Escócia"],["Triângulo","Ding"],["Ukulele","Havaí"],
+    ["Pandeireta","Guizos"],["Contrabaixo","Grave"],["Harmónica","Bolso"],["Órgão","Igreja"]
+  ],
+  "Bebidas": [
+    ["Café","Manhã"],["Chá","Saqueta"],["Sumo de laranja","Espremer"],["Leite","Vaca"],
+    ["Champanhe","Rolha"],["Cerveja","Espuma"],["Chocolate quente","Inverno"],["Limonada","Ácido"],
+    ["Sangria","Fruta"],["Água com gás","Bolhas"],["Batido","Palhinha"],["Vinho tinto","Taça"],
+    ["Ice tea","Limão"],["Mojito","Hortelã"],["Galão","Copo alto"],["Água de coco","Palmeira"]
+  ],
+  "Frutas e legumes": [
+    ["Banana","Casca"],["Morango","Sementes"],["Ananas","Coroa"],["Melancia","Pevides"],
+    ["Cenoura","Coelho"],["Cebola","Lágrimas"],["Abacate","Caroço"],["Limão","Azedo"],
+    ["Tomate","Salada"],["Brócolo","Árvore"],["Batata","Frita"],["Uvas","Cacho"],
+    ["Abóbora","Halloween"],["Kiwi","Pelos"],["Cereja","Par"],["Alho","Vampiro"],
+    ["Coco","Duro"],["Pimento","Cores"]
+  ],
+  "Doces e sobremesas": [
+    ["Bolo de chocolate","Fatia"],["Arroz doce","Canela"],["Mousse","Leve"],["Bola de Berlim","Praia"],
+    ["Pudim","Caramelo"],["Algodão doce","Feira"],["Tiramisu","Café"],["Donut","Buraco"],
+    ["Brigadeiro","Granulado"],["Baba de camelo","Leite condensado"],["Cheesecake","Base"],["Waffle","Quadrados"],
+    ["Pastilha elástica","Balão"],["Chupa-chupa","Pau"],["Bolo-rei","Fava"],["Crepe","Fino"],
+    ["Ovos moles","Aveiro"],["Macarons","Cores"]
+  ],
+  "Partes do corpo": [
+    ["Nariz","Cheiro"],["Joelho","Dobrar"],["Cotovelo","Braço"],["Umbigo","Centro"],
+    ["Orelha","Brinco"],["Dente","Fada"],["Coração","Batida"],["Unha","Verniz"],
+    ["Sobrancelha","Pinça"],["Pescoço","Cachecol"],["Cabelo","Pente"],["Língua","Sabor"],
+    ["Ombro","Mochila"],["Tornozelo","Entorse"],["Pulmão","Ar"],["Polegar","Boleia"]
+  ],
+  "Roupa e acessórios": [
+    ["Chapéu","Cabeça"],["Gravata","Nó"],["Meias","Pares"],["Pijama","Cama"],
+    ["Biquíni","Praia"],["Luvas","Mãos"],["Cachecol","Futebol"],["Saltos altos","Equilíbrio"],
+    ["Cinto","Fivela"],["Calças de ganga","Azul"],["Casaco","Frio"],["Anel","Dedo"],
+    ["Botas","Chuva"],["Vestido de noiva","Branco"],["Chinelos","Verão"],["Boné","Pala"],
+    ["Mala","Ombro"],["Fato de banho","Piscina"]
+  ],
+  "Transportes": [
+    ["Avião","Asas"],["Comboio","Carris"],["Bicicleta","Pedais"],["Barco","Âncora"],
+    ["Helicóptero","Hélice"],["Metro","Túnel"],["Mota","Capacete"],["Táxi","Taxímetro"],
+    ["Ambulância","Urgência"],["Trotinete","Passeio"],["Submarino","Fundo"],["Balão de ar quente","Cesto"],
+    ["Autocarro","Paragem"],["Teleférico","Cabo"],["Foguetão","Contagem"],["Skate","Rodas"],
+    ["Tractor","Campo"],["Cavalo","Sela"]
+  ],
+  "Natureza e tempo": [
+    ["Arco-íris","Cores"],["Vulcão","Lava"],["Neve","Branca"],["Trovoada","Barulho"],
+    ["Deserto","Camelo"],["Cascata","Queda"],["Floresta","Árvores"],["Lua","Noite"],
+    ["Tornado","Espiral"],["Oceano","Azul"],["Montanha","Pico"],["Nevoeiro","Cinzento"],
+    ["Eclipse","Sombra"],["Gruta","Escuro"],["Estrela cadente","Desejo"],["Terramoto","Tremer"]
+  ],
+  "Festas e datas": [
+    ["Natal","Pinheiro"],["Páscoa","Ovos"],["Halloween","Doces"],["Carnaval","Máscaras"],
+    ["Passagem de ano","Passas"],["Aniversário","Velas"],["Casamento","Arroz"],["São Valentim","Corações"],
+    ["São João","Martelinho"],["Batizado","Água"],["Despedida de solteiro","Véu"],["Dia da Mãe","Flores"],
+    ["Baile de finalistas","Gala"],["Magusto","Castanhas"],["Reis","Coroa"],["Festival de verão","Palco"]
+  ],
+  "Jogos e brinquedos": [
+    ["Monopoly","Prisão"],["Cubo de Rubik","Cores"],["Escondidas","Contar"],["Xadrez","Tabuleiro"],
+    ["Ioiô","Fio"],["Barbie","Rosa"],["Minecraft","Blocos"],["Uno","Cartas"],
+    ["Pião","Rodar"],["Tetris","Encaixar"],["Fortnite","Dança"],["Puzzle","Peças"],
+    ["Mario","Bigode"],["Papagaio de papel","Vento"],["Monóculo","Lente"],["Jenga","Torre"],
+    ["Bonecas russas","Dentro"],["Berlinde","Vidro"]
+  ],
+  "Casa": [
+    ["Cozinha","Fogão"],["Sofá","Almofadas"],["Cama","Lençóis"],["Micro-ondas","Apito"],
+    ["Máquina de lavar","Roupa"],["Varanda","Vista"],["Lareira","Lenha"],["Sotão","Pó"],
+    ["Torradeira","Pão"],["Aspirador","Barulho"],["Banheira","Espuma"],["Campainha","Porta"],
+    ["Candeeiro","Luz"],["Garagem","Carro"],["Estendal","Molas"],["Persiana","Janela"]
+  ],
+  "Escola": [
+    ["Mochila","Livros"],["Recreio","Intervalo"],["Teste","Nervos"],["Professor","Quadro"],
+    ["Cantina","Tabuleiro"],["Borracha","Apagar"],["Educação física","Ginásio"],["Calculadora","Contas"],
+    ["Visita de estudo","Autocarro"],["TPC","Casa"],["Estojo","Fecho"],["Sumário","Caderno"],
+    ["Campainha","Toque"],["Diretor","Gabinete"],["Férias","Liberdade"],["Cola","Batota"]
+  ],
+  "Tecnologia e apps": [
+    ["WhatsApp","Visto azul"],["Instagram","Filtro"],["TikTok","Dança"],["YouTube","Vídeo"],
+    ["Wi-Fi","Senha"],["Selfie","Braço"],["Emoji","Cara"],["Auriculares","Ouvidos"],
+    ["Powerbank","Bateria"],["Drone","Voar"],["Google Maps","Caminho"],["Uber","Boleia"],
+    ["Robot","Metal"],["Password","Segredo"],["Bluetooth","Emparelhar"],["Inteligência artificial","Pensar"]
+  ],
+  "Monumentos do mundo": [
+    ["Torre Eiffel","Ferro"],["Pirâmides","Faraó"],["Estátua da Liberdade","Tocha"],["Coliseu de Roma","Gladiadores"],
+    ["Torre de Pisa","Inclinada"],["Cristo Redentor","Braços"],["Big Ben","Horas"],["Taj Mahal","Amor"],
+    ["Muralha da China","Comprida"],["Sagrada Família","Obras"],["Machu Picchu","Montanha"],["Stonehenge","Pedras"],
+    ["Ópera de Sydney","Velas"],["Mosteiro dos Jerónimos","Pastel"],["Acrópole","Deuses"],["Burj Khalifa","Alto"]
+  ],
+  "Fantasia e mitologia": [
+    ["Dragão","Fogo"],["Sereia","Cauda"],["Unicórnio","Chifre"],["Vampiro","Dentes"],
+    ["Fantasma","Lençol"],["Bruxa","Vassoura"],["Zombie","Lento"],["Fada","Asas"],
+    ["Lobisomem","Lua cheia"],["Duende","Pequeno"],["Génio da lâmpada","Desejos"],["Múmia","Ligaduras"],
+    ["Medusa","Pedra"],["Pai Natal","Barba"],["Fada dos dentes","Almofada"],["Ciclope","Olho"],
+    ["Pegasus","Asas"],["Hidra","Cabeças"]
+  ]
+};
+
+const state = {
+  players: ["","","","","","","",""],
+  impostors: 1, lives: 2, time: 30,
+  cats: new Set(Object.keys(CATEGORIES)),
+  mode: "hint", used: new Set(), g: null, custom: []
+};
+try{
+  const s = JSON.parse(localStorage.getItem("impostor-setup") || "null");
+  if(s){
+    if(Array.isArray(s.players) && s.players.length >= 3) state.players = s.players;
+    if(s.impostors) state.impostors = s.impostors;
+    if(s.lives) state.lives = s.lives;
+    if(s.time) state.time = s.time;
+    if(Array.isArray(s.custom)) state.custom = s.custom.filter(t => t && t.name && Array.isArray(t.words));
+    if(Array.isArray(s.cats)){ const all = allCats(); state.cats = new Set(s.cats.filter(c => all[c])); }
+    if(s.mode) state.mode = s.mode;
+  }
+}catch(e){}
+function save(){
+  try{ localStorage.setItem("impostor-setup", JSON.stringify({players:state.players, impostors:state.impostors,
+    lives:state.lives, time:state.time, cats:[...state.cats], mode:state.mode, custom:state.custom})); }catch(e){}
+}
+function allCats(){
+  const all = {...CATEGORIES};
+  state.custom.forEach(t => all[t.name] = t.words);
+  return all;
+}
+
+const $ = id => document.getElementById(id);
+const filledNames = () => state.players.map(s => s.trim()).filter(Boolean);
+const maxImp = n => Math.max(1, Math.floor((n - 1) / 2));
+function show(id){
+  ["setup","reveal","game","end"].forEach(s => $(s).classList.toggle("hidden", s !== id));
+  window.scrollTo(0,0);
+}
+function view(id){
+  ["vWords","vVote","vVerdict"].forEach(s => $(s).classList.toggle("hidden", s !== id));
+  window.scrollTo(0,0);
+}
+function setPressed(sel, fn){ document.querySelectorAll(sel).forEach(b => b.setAttribute("aria-pressed", fn(b))); }
+
+/* ---------- setup ---------- */
+function renderPlayers(){
+  const wrap = $("players"); wrap.innerHTML = "";
+  state.players.forEach((name, i) => {
+    const row = document.createElement("div"); row.className = "prow";
+    row.innerHTML = `<span>${i+1}</span>`;
+    const inp = document.createElement("input");
+    inp.type = "text"; inp.value = name; inp.placeholder = `Jogador ${i+1}`; inp.maxLength = 24; inp.autocomplete = "off";
+    inp.addEventListener("input", () => { state.players[i] = inp.value; save(); });
+    inp.addEventListener("keydown", e => {
+      if(e.key === "Enter"){ const nx = wrap.querySelectorAll("input")[i+1]; nx ? nx.focus() : addPlayer(); }
+    });
+    const x = document.createElement("button");
+    x.className = "x"; x.textContent = "×"; x.setAttribute("aria-label", `Remover jogador ${i+1}`);
+    x.disabled = state.players.length <= 3;
+    x.addEventListener("click", () => { state.players.splice(i,1); renderPlayers(); renderImp(); save(); });
+    row.append(inp, x); wrap.append(row);
+  });
+}
+function addPlayer(){
+  if(state.players.length >= 20) return;
+  state.players.push(""); renderPlayers(); renderImp(); save();
+  const ins = $("players").querySelectorAll("input"); ins[ins.length-1].focus();
+}
+function renderImp(){
+  const n = state.players.length, max = maxImp(n);
+  if(state.impostors > max) state.impostors = max;
+  $("impCount").textContent = state.impostors;
+  $("impMinus").disabled = state.impostors <= 1;
+  $("impPlus").disabled = state.impostors >= max;
+  $("impHint").textContent = `${n - state.impostors} civis contra ${state.impostors} ${state.impostors === 1 ? "impostor" : "impostores"}. Com ${n} jogadores podem ser até ${max}.`;
+}
+function renderLives(){
+  $("livesCount").textContent = state.lives;
+  $("livesMinus").disabled = state.lives <= 1;
+  $("livesPlus").disabled = state.lives >= 5;
+}
+function renderTime(){ setPressed("#time .chip", b => +b.dataset.t === state.time); }
+function renderCats(){
+  const wrap = $("cats"); wrap.innerHTML = "";
+  Object.keys(CATEGORIES).forEach(c => {
+    const b = document.createElement("button");
+    b.className = "chip"; b.textContent = c; b.setAttribute("aria-pressed", state.cats.has(c));
+    b.addEventListener("click", () => {
+      state.cats.has(c) ? state.cats.delete(c) : state.cats.add(c);
+      b.setAttribute("aria-pressed", state.cats.has(c)); save();
+    });
+    wrap.append(b);
+  });
+}
+function renderMode(){
+  setPressed("#mode .chip", b => b.dataset.mode === state.mode);
+  $("modeHint").textContent = state.mode === "hint"
+    ? "O impostor vê uma palavra vaga ligada à palavra secreta."
+    : "O impostor não recebe nada e tem de improvisar.";
+}
+$("addPlayer").onclick = addPlayer;
+$("catsAll").onclick = () => { state.cats = new Set(Object.keys(allCats())); renderCats(); renderCustom(); save(); };
+$("catsNone").onclick = () => { state.cats = new Set(); renderCats(); renderCustom(); save(); };
+
+/* ---------- custom themes ---------- */
+let editing = null;
+function renderCustom(){
+  const wrap = $("customList"); wrap.innerHTML = "";
+  if(!state.custom.length){ wrap.innerHTML = '<p class="hint" style="margin:0">Ainda não há temas vossos.</p>'; }
+  state.custom.forEach((t, i) => {
+    const row = document.createElement("div"); row.className = "trow";
+    const b = document.createElement("button"); b.className = "chip";
+    b.textContent = `${t.name} (${t.words.length})`;
+    b.setAttribute("aria-pressed", state.cats.has(t.name));
+    b.onclick = () => {
+      state.cats.has(t.name) ? state.cats.delete(t.name) : state.cats.add(t.name);
+      b.setAttribute("aria-pressed", state.cats.has(t.name)); save();
+    };
+    const e = document.createElement("button"); e.className = "btn ghost small"; e.textContent = "Editar";
+    e.onclick = () => openEditor(i);
+    row.append(b, e); wrap.append(row);
+  });
+}
+function openEditor(i){
+  editing = i;
+  const t = i == null ? {name:"", words:[]} : state.custom[i];
+  $("themeName").value = t.name;
+  $("themeWords").value = t.words.map(([w,h]) => h ? `${w} - ${h}` : w).join("\n");
+  $("themeErr").textContent = "";
+  $("deleteTheme").classList.toggle("hidden", i == null);
+  $("editor").classList.remove("hidden"); $("newTheme").classList.add("hidden");
+  $("themeName").focus();
+}
+function closeEditor(){ editing = null; $("editor").classList.add("hidden"); $("newTheme").classList.remove("hidden"); }
+$("newTheme").onclick = () => openEditor(null);
+$("cancelTheme").onclick = closeEditor;
+$("saveTheme").onclick = () => {
+  const name = $("themeName").value.trim(), err = $("themeErr");
+  if(!name){ err.textContent = "Dá um nome ao tema."; return; }
+  const others = Object.keys(CATEGORIES).concat(state.custom.filter((_, i) => i !== editing).map(t => t.name));
+  if(others.some(n => n.toLowerCase() === name.toLowerCase())){ err.textContent = `Já existe um tema chamado ${name}.`; return; }
+  const words = [], seen = new Set();
+  $("themeWords").value.split("\n").forEach(line => {
+    const l = line.trim(); if(!l) return;
+    const parts = l.split(/\s+[-–]\s+|\s*[:|]\s*/);
+    const w = parts[0].trim(), h = parts.slice(1).join(" ").trim();
+    if(w && !seen.has(w.toLowerCase())){ seen.add(w.toLowerCase()); words.push([w, h]); }
+  });
+  if(words.length < 2){ err.textContent = "Escreve pelo menos 2 palavras, uma por linha."; return; }
+  if(editing == null){ state.custom.push({name, words}); state.cats.add(name); }
+  else {
+    const old = state.custom[editing].name;
+    state.custom[editing] = {name, words};
+    if(state.cats.has(old)){ state.cats.delete(old); state.cats.add(name); }
+  }
+  save(); renderCustom(); closeEditor();
+};
+$("deleteTheme").onclick = () => {
+  const t = state.custom[editing];
+  if(!confirm(`Apagar o tema ${t.name}?`)) return;
+  state.cats.delete(t.name); state.custom.splice(editing, 1);
+  save(); renderCustom(); closeEditor();
+};
+$("impMinus").onclick = () => { state.impostors--; renderImp(); save(); };
+$("impPlus").onclick = () => { state.impostors++; renderImp(); save(); };
+$("livesMinus").onclick = () => { state.lives--; renderLives(); save(); };
+$("livesPlus").onclick = () => { state.lives++; renderLives(); save(); };
+document.querySelectorAll("#time .chip").forEach(b => b.onclick = () => { state.time = +b.dataset.t; renderTime(); save(); });
+document.querySelectorAll("#mode .chip").forEach(b => b.onclick = () => { state.mode = b.dataset.mode; renderMode(); save(); });
+
+/* ---------- new game ---------- */
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function pickWord(){
+  const pool = [];
+  const all = allCats();
+  state.cats.forEach(c => (all[c] || []).forEach(([w,h]) => pool.push({cat:c, word:w, hint:h})));
+  let fresh = pool.filter(p => !state.used.has(p.word));
+  if(!fresh.length){ state.used.clear(); fresh = pool; }
+  const p = fresh[Math.floor(Math.random()*fresh.length)];
+  state.used.add(p.word); return p;
+}
+
+function startGame(){
+  const names = filledNames(), err = $("err");
+  if(names.length < 3){ err.textContent = "Escrevam pelo menos 3 nomes para jogar."; return; }
+  const dup = names.find((n,i) => names.findIndex(m => m.toLowerCase() === n.toLowerCase()) !== i);
+  if(dup){ err.textContent = `O nome ${dup} aparece duas vezes. Usem nomes diferentes.`; return; }
+  if(!state.cats.size){ err.textContent = "Escolham pelo menos uma categoria."; return; }
+  const max = maxImp(names.length);
+  if(state.impostors > max){ err.textContent = `Com ${names.length} jogadores só podem ser até ${max} impostores.`; return; }
+  err.textContent = "";
+  newGame();
+}
+function newGame(){
+  const names = filledNames(), pick = pickWord();
+  const idx = shuffle([...names.keys()]).slice(0, state.impostors);
+  state.g = {
+    ...pick,
+    players: names.map((n,i) => ({ name:n, imp: idx.includes(i), out:false, how:"" })),
+    lives: state.lives, maxLives: state.lives,
+    round: 0, start: Math.floor(Math.random()*names.length),
+    revealI: 0
+  };
+  showPass(); show("reveal");
+}
+$("start").onclick = startGame;
+
+/* ---------- reveal cards ---------- */
+function showPass(){
+  const g = state.g, p = g.players[g.revealI];
+  $("progress").textContent = `Jogador ${g.revealI+1} de ${g.players.length}`;
+  $("passName").textContent = p.name;
+  $("iAm").textContent = `Sou eu, ${p.name}`;
+  $("passView").classList.remove("hidden");
+  $("cardView").classList.add("hidden");
+  $("card").classList.remove("flipped");
+  $("hideNext").disabled = true;
+}
+function showCard(){
+  const g = state.g, p = g.players[g.revealI];
+  $("cardBack").className = "face back " + (p.imp ? "imp" : "civil");
+  if(p.imp){
+    $("roleTitle").textContent = "Impostor";
+    const hasHint = state.mode === "hint" && g.hint;
+    $("wordLabel").textContent = hasHint ? "A tua pista" : "Não tens palavra";
+    $("wordText").textContent = hasHint ? g.hint : "Disfarça!";
+  } else {
+    $("roleTitle").textContent = "Civil";
+    $("wordLabel").textContent = "A palavra secreta é";
+    $("wordText").textContent = g.word;
+  }
+  $("catText").textContent = p.imp ? "" : `Categoria: ${g.cat}`;
+  $("hideNext").textContent = g.revealI === g.players.length - 1 ? "Esconder e começar" : "Esconder e passar";
+  $("passView").classList.add("hidden");
+  $("cardView").classList.remove("hidden");
+}
+function flip(){ $("card").classList.add("flipped"); $("hideNext").disabled = false; }
+$("iAm").onclick = showCard;
+$("cardFront").onclick = flip;
+$("cardFront").onkeydown = e => { if(e.key === "Enter" || e.key === " "){ e.preventDefault(); flip(); } };
+$("hideNext").onclick = () => {
+  const g = state.g; $("card").classList.remove("flipped");
+  if(g.revealI < g.players.length - 1){ g.revealI++; showPass(); }
+  else { show("game"); startWordRound(); }
+};
+
+/* ---------- status ---------- */
+const alive = () => state.g.players.filter(p => !p.out);
+function renderStatus(){
+  const g = state.g;
+  const impLeft = alive().filter(p => p.imp).length;
+  $("roundLabel").textContent = `Ronda ${g.round}  ·  ${impLeft} ${impLeft === 1 ? "impostor" : "impostores"} em jogo`;
+  $("hearts").innerHTML = Array.from({length:g.maxLives}, (_,i) => `<span class="${i < g.lives ? "" : "lost"}">❤️</span>`).join("");
+  $("hearts").setAttribute("aria-label", `${g.lives} de ${g.maxLives} vidas`);
+}
+
+/* ---------- word turns + timer ---------- */
+let tick = null, remaining = 0;
+const CIRC = 2 * Math.PI * 44;
+$("timerBar").style.strokeDasharray = CIRC;
+
+function startWordRound(){
+  const g = state.g; g.round++;
+  const n = g.players.length;
+  let s = g.start % n;
+  while(g.players[s].out) s = (s + 1) % n;
+  g.order = [];
+  for(let k=0;k<n;k++){ const p = g.players[(s+k)%n]; if(!p.out) g.order.push(p); }
+  g.start = (s + 1) % n;
+  g.turn = 0;
+  renderStatus(); view("vWords"); setupTurn();
+}
+function setupTurn(){
+  const g = state.g;
+  stopTimer();
+  $("turnProgress").textContent = `Palavra ${g.turn+1} de ${g.order.length}`;
+  $("speaker").textContent = g.order[g.turn].name;
+  remaining = state.time; drawTimer();
+  $("timer").classList.remove("low","done");
+  $("turnBtn").textContent = "Começar tempo";
+  $("turnBtn").dataset.state = "idle";
+  $("skipTurn").textContent = g.turn === g.order.length - 1 ? "Ir para a votação" : "Passar ao próximo";
+}
+function drawTimer(){
+  $("timerNum").textContent = remaining > 0 ? remaining : "Tempo!";
+  $("timerBar").style.strokeDashoffset = CIRC * (1 - remaining / state.time);
+  $("timer").classList.toggle("low", remaining <= 5 && remaining > 0);
+  $("timer").classList.toggle("done", remaining <= 0);
+}
+function stopTimer(){ if(tick){ clearInterval(tick); tick = null; } }
+function beep(){
+  try{
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    [0,0.25].forEach(t => {
+      const o = ctx.createOscillator(), gn = ctx.createGain();
+      o.frequency.value = 880; o.connect(gn); gn.connect(ctx.destination);
+      gn.gain.setValueAtTime(0.25, ctx.currentTime + t);
+      gn.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + 0.2);
+      o.start(ctx.currentTime + t); o.stop(ctx.currentTime + t + 0.2);
+    });
+  }catch(e){}
+  try{ navigator.vibrate && navigator.vibrate([200,100,200]); }catch(e){}
+}
+$("turnBtn").onclick = () => {
+  const b = $("turnBtn");
+  if(b.dataset.state === "idle" || b.dataset.state === "paused"){
+    b.dataset.state = "running"; b.textContent = "Pausar";
+    tick = setInterval(() => {
+      remaining--; drawTimer();
+      if(remaining <= 0){ stopTimer(); beep(); b.dataset.state = "done"; b.textContent = "Recomeçar tempo"; }
+    }, 1000);
+  } else if(b.dataset.state === "running"){
+    stopTimer(); b.dataset.state = "paused"; b.textContent = "Continuar";
+  } else { setupTurn(); }
+};
+$("skipTurn").onclick = () => {
+  const g = state.g;
+  if(g.turn < g.order.length - 1){ g.turn++; setupTurn(); }
+  else { stopTimer(); openVote(); }
+};
+
+/* ---------- vote ---------- */
+let voteSel = null;
+function openVote(){
+  voteSel = null; $("voteBtn").disabled = true; $("voteErr").textContent = "";
+  const wrap = $("votePick"); wrap.innerHTML = "";
+  alive().forEach(p => {
+    const b = document.createElement("button");
+    b.textContent = p.name; b.setAttribute("aria-pressed","false");
+    b.onclick = () => { voteSel = p; setPressed("#votePick button", x => x === b); $("voteBtn").disabled = false; };
+    wrap.append(b);
+  });
+  renderStatus(); view("vVote");
+}
+$("voteBtn").onclick = () => {
+  if(!voteSel) return;
+  if(!confirm(`Eliminar ${voteSel.name}?`)) return;
+  const g = state.g, p = voteSel;
+  p.out = true; p.how = "Votado";
+  if(!p.imp) g.lives--;
+  if(checkEnd()) return;
+  $("verdictBox").className = "block verdict " + (p.imp ? "civil" : "imp");
+  $("verdictName").textContent = p.name;
+  $("verdictText").textContent = p.imp ? "Era impostor! Bem apanhado." : "Era civil. Perderam uma vida.";
+  const impLeft = alive().filter(x => x.imp).length;
+  $("verdictInfo").textContent = `Ainda há ${impLeft} ${impLeft === 1 ? "impostor" : "impostores"} em jogo e ${g.lives} ${g.lives === 1 ? "vida" : "vidas"}.`;
+  renderStatus(); view("vVerdict");
+};
+$("tieBtn").onclick = () => startWordRound();
+$("nextRound").onclick = () => startWordRound();
+
+/* ---------- end ---------- */
+function checkEnd(){
+  const g = state.g, a = alive();
+  const imps = a.filter(p => p.imp).length, civs = a.length - imps;
+  if(imps === 0){ endGame("civil", "Todos os impostores foram apanhados."); return true; }
+  if(g.lives <= 0){ endGame("imp", "Os civis ficaram sem vidas."); return true; }
+  if(civs === 0){ endGame("imp", "Já não há civis em jogo."); return true; }
+  return false;
+}
+function endGame(winner, reason){
+  stopTimer();
+  const g = state.g;
+  $("endBox").className = "block verdict " + winner;
+  $("endTitle").textContent = winner === "imp" ? "Os impostores ganharam" : "Os civis ganharam";
+  $("endText").textContent = reason;
+  $("endWord").textContent = g.word;
+  const ul = $("endList"); ul.innerHTML = "";
+  [...g.players].sort((a,b) => b.imp - a.imp).forEach(p => {
+    const li = document.createElement("li");
+    const nm = document.createElement("span");
+    nm.textContent = p.name + (p.out ? ` (${p.how.toLowerCase()})` : "");
+    if(p.out) nm.className = "out";
+    const t = document.createElement("span");
+    t.className = "tag " + (p.imp ? "imp" : "civil"); t.textContent = p.imp ? "Impostor" : "Civil";
+    li.append(nm, t); ul.append(li);
+  });
+  show("end");
+}
+$("playAgain").onclick = newGame;
+$("backSetup").onclick = () => { renderPlayers(); renderImp(); show("setup"); };
+
+renderPlayers(); renderImp(); renderLives(); renderTime(); renderCats(); renderCustom(); renderMode();
+</script>
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("sw.js").catch(() => {});
+  });
+}
+</script>
+</body>
+</html>
